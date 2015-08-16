@@ -12,8 +12,13 @@ August 6, 2015
 
 ```r
 setwd("~/Google Drive/code/r/reproducible")
-activity <- read.csv("activity.csv", header = TRUE, sep = ",", quote = "\"")
+
+# read csv into dataset
+activity <- read.csv("activity.csv", header = TRUE, sep = ",", quote = "\"", stringsAsFactors=FALSE)
+
+# remove NA from dataset
 activity_no_na <- na.omit(activity)
+
 # View(activity)
 # View(activity_no_na)
 ```
@@ -99,7 +104,7 @@ hist(steps_per_day_total$steps, xlab="Steps per Day", main="Historgram of Steps 
 
 
 
-The mean total number of steps taken per day is:
+
 
 ```r
 steps_per_day_total_mean <- mean(steps_per_day_total$steps)
@@ -110,8 +115,9 @@ steps_per_day_total_mean
 ## [1] 10766.19
 ```
 
+#### The mean total number of steps taken per day is: 1.0766189\times 10^{4}
 
-The median total number of steps taken per day is:
+
 
 ```r
 steps_per_day_total_median <- median(steps_per_day_total$steps)
@@ -122,15 +128,98 @@ steps_per_day_total_median
 ## [1] 10765
 ```
 
+#### The median total number of steps taken per day is: 10765
+
 ## What is the average daily activity pattern?
 
 1. Make a time series plot (i.e. `type = "l"`) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
+
+```r
+activity_no_na_aggregate <- aggregate(steps~date, FUN=mean, data=activity_no_na)
+```
+
+
+```r
+# library(ggplot2) 
+# g <- ggplot(activity_no_na_aggregate, aes(x, as.POSIXct(date, format="%Y-%m-%d")))
+# g+geom_bar(stat="identity")+labs(title="Average number of steps for a given interval across all days", x="Interval", y="Date")
+```
+
+
+```r
+# with(activity_no_na, plot(interval, as.POSIXct(date, format="%Y-%m-%d"), type="n", xlab= "interval", ylab="date"))
+# with(activity_no_na_aggregate, lines(date, x))
+
+# plot(activity_no_na$interval, as.POSIXct(activity_no_na$date, format="%Y-%m-%d"), type="l", xlab= "interval", ylab="date", col="green", lwd=2)
+# plot(mean(activity_no_na$steps))
+
+library(lattice)
+xyplot(as.POSIXct(date, format="%Y-%m-%d") ~ interval | mean(steps), data=activity_no_na, xlab="Interval", ylab="Date")
+```
+
+![](./PA1_template_files/figure-html/unnamed-chunk-7-1.png) 
+
 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
 
+```r
+# get mean of steps by intervals
+activity_no_na_aggregate_interval <- aggregate(steps~interval, FUN=mean, data=activity_no_na)
+
+# sort by descending order on steps to get max steps and corresponding interval
+activity_no_na_aggregate_interval_sorted <- activity_no_na_aggregate_interval[order(-activity_no_na_aggregate_interval$steps),]
+head(activity_no_na_aggregate_interval_sorted)
+```
+
+```
+##     interval    steps
+## 104      835 206.1698
+## 105      840 195.9245
+## 107      850 183.3962
+## 106      845 179.5660
+## 103      830 177.3019
+## 101      820 171.1509
+```
+
+#### Interval 835 has 206.1698113 steps
+
 ## Imputing missing values
 
+Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
 
+1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+
+
+```r
+# get total rows in dataset
+dataset_complete_total_rows <- nrow(activity)
+
+# get total complete rows (rows without NAs) in dataset
+dataset_no_na_total_rows <- nrow(activity_no_na)
+
+# take the difference of the number rows of the above two datasets
+rows_with_na <- dataset_complete_total_rows - dataset_no_na_total_rows
+```
+
+#### The total number of rows with NAs is 2304
+
+2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+
+```r
+# take a copy of the activity dataset
+activity_copy <- activity
+
+# find rows with NA values
+show_na_steps <- activity_copy$steps[activity_copy$steps=="NA"]
+
+# recode rows with mean of steps from complete-only dataset
+activity_copy$steps[activity_copy$steps=="NA"] <- as.numeric(mean(activity_no_na$steps))
+```
+
+3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 ## Are there differences in activity patterns between weekdays and weekends?
